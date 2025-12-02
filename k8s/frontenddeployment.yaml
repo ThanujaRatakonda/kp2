@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: thanujaratakonda/frontend
+          image: thanujaratakonda/frontend:7
           ports:
             - containerPort: 3000
 ---
