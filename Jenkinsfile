@@ -3,7 +3,7 @@ pipeline {
     environment {
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         HARBOR_URL = "10.131.103.92:8090"
-        HARBOR_PROJECT = "kp1"
+        HARBOR_PROJECT = "kp2"
         TRIVY_OUTPUT_JSON = "trivy-output.json"
     }
      parameters {
@@ -12,7 +12,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/ThanujaRatakonda/kp1.git'
+                git 'https://github.com/ThanujaRatakonda/kp2.git'
             }
         }
         stage('Build, Scan & Push Docker Images') {
@@ -20,8 +20,8 @@ pipeline {
                 script {
                     // Define both containers
                     def containers = [
-                        [name: "student-api", folder: "student-api"],
-                        [name: "marks-api", folder: "marks-api"]
+                        [name: "frontend", folder: "frontend"],
+                        [name: "backend", folder: "backend"]
                     ]
                     containers.each { c ->
                         def fullImage = "${HARBOR_URL}/${HARBOR_PROJECT}/${c.name}:${IMAGE_TAG}"
@@ -72,17 +72,14 @@ pipeline {
                     echo "Applying Kubernetes manifests with new images..."
                     // Replace __IMAGE_TAG__ in YAML files
                     sh """
-                        sed -i 's/__IMAGE_TAG__/${IMAGE_TAG}/g' k8s/student-api-deployment.yaml
-                        sed -i 's/__IMAGE_TAG__/${IMAGE_TAG}/g' k8s/marks-api-deployment.yaml
+                        sed -i 's/__IMAGE_TAG__/${IMAGE_TAG}/g' k8s/backenddeployment.yaml
+                        sed -i 's/__IMAGE_TAG__/${IMAGE_TAG}/g' k8s/frontenddeployment.yaml
                     """
                     echo "deployment.yamls:"
-                    sh "cat k8s/student-api-deployment.yaml"
-                    sh "cat k8s/marks-api-deployment.yaml"
+                    sh "cat k8s/backenddeployment.yaml.yaml"
+                    sh "cat k8s/frontenddeployment.yaml.yaml"
                     // Apply new deployments
-                    sh "kubectl apply -f k8s/student-api-deployment.yaml"
-                    sh "kubectl apply -f k8s/student-service.yaml"
-                    sh "kubectl apply -f k8s/marks-api-deployment.yaml"
-                    sh "kubectl apply -f k8s/marks-service.yaml"
+                    sh "kubectl apply -f k8s/ "
                 }
             }
         }
@@ -90,8 +87,8 @@ pipeline {
             steps {
                 script {
                     echo "Scaling both microservices to ${params.REPLICA_COUNT} replicas..."
-                    sh "kubectl scale deployment student-api --replicas=${params.REPLICA_COUNT}"
-                    sh "kubectl scale deployment marks-api --replicas=${params.REPLICA_COUNT}"
+                    sh "kubectl scale deployment backend --replicas=${params.REPLICA_COUNT}"
+                    sh "kubectl scale deployment frontend --replicas=${params.REPLICA_COUNT}"
                     echo "Current deployment status:"
                     sh "kubectl get deployments"
                 }
